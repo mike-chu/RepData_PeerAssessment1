@@ -2,7 +2,8 @@
 
 
 ## Loading and preprocessing the data
-```{r loading_data, echo=TRUE}
+
+```r
 ## Loading the data
 activity <- read.csv(unz("activity.zip", "activity.csv"),
                      stringsAsFactors = FALSE)
@@ -12,7 +13,8 @@ activity$date <- as.Date(activity$date, format="%Y-%m-%d")
 
 
 ## What is mean total number of steps taken per day?
-```{r total_steps_per_day, echo=TRUE}
+
+```r
 library(ggplot2)
 dailysteps <- tapply(activity$steps, INDEX = activity$date,
                      FUN = sum, na.rm=TRUE)
@@ -22,15 +24,21 @@ ggplot(data.frame(dailysteps), aes(dailysteps)) +
     ggtitle("Histogram of the total number of steps taken each day") +
     xlab("Total number of steps taken each day") +
     ylab("Count")
+```
+
+![plot of chunk total_steps_per_day](figure/total_steps_per_day.png) 
+
+```r
 dailysteps_mean <- mean(dailysteps)
 dailysteps_median <- median(dailysteps)
 ```
-The mean total number of steps taken per day is `r dailysteps_mean`.
-The median total number of steps taken per day is `r dailysteps_median`.
+The mean total number of steps taken per day is 9354.2295.
+The median total number of steps taken per day is 10395.
 
 
 ## What is the average daily activity pattern?
-```{r avg_daily_pattern, echo=TRUE}
+
+```r
 library(scales)
 avg_steps <- tapply(activity$steps, INDEX = activity$interval,
                     FUN = mean, na.rm=TRUE)
@@ -45,24 +53,50 @@ ggplot(data.frame(five_min_int, avg_steps), aes(five_min_int, avg_steps)) +
     xlab("Start time of 5-min interval") +
     scale_x_datetime(labels = date_format("%H:%M")) +
     ylab("Average number of steps") 
+```
+
+![plot of chunk avg_daily_pattern](figure/avg_daily_pattern.png) 
+
+```r
 five_min_int_peak <- strftime(five_min_int[which.max(avg_steps)], format="%H:%M")
 ```
-The 5-minute interval, on average across all the days in the dataset, containing the maximum number of steps starts at `r five_min_int_peak`.
+The 5-minute interval, on average across all the days in the dataset, containing the maximum number of steps starts at 08:35.
 
 ## Imputing missing values
-``` {r imputing1, echo=TRUE, results='markup'}
+
+```r
 colSums(is.na(activity))
+```
+
+```
+##    steps     date interval 
+##     2304        0        0
+```
+
+```r
 nmiss <- sum(is.na(activity$steps))
 table(activity$date[is.na(activity$steps)])
+```
+
+```
+## 
+## 2012-10-01 2012-10-08 2012-11-01 2012-11-04 2012-11-09 2012-11-10 
+##        288        288        288        288        288        288 
+## 2012-11-14 2012-11-30 
+##        288        288
+```
+
+```r
 days_miss <- names(table(activity$date[is.na(activity$steps)]))
 ```
 
-There are `r nmiss` missing values in the dataset. 
-All the 5-min interval data are missing in these 8 days: `r days_miss`.
+There are 2304 missing values in the dataset. 
+All the 5-min interval data are missing in these 8 days: 2012-10-01, 2012-10-08, 2012-11-01, 2012-11-04, 2012-11-09, 2012-11-10, 2012-11-14, 2012-11-30.
 
 To impute the missing data, we can fill them in with the mean for that 5-minute interval across all other days.
 
-``` {r imputing2, echo=TRUE}
+
+```r
 for (i in seq_along(avg_steps)) {
     activity$steps[is.na(activity$steps) &
                        activity$interval==as.integer(names(avg_steps[i]))] <- avg_steps[i]
@@ -75,17 +109,23 @@ ggplot(data.frame(dailysteps), aes(dailysteps)) +
     ggtitle("Histogram of the total number of steps taken each day") +
     xlab("Total number of steps taken each day") +
     ylab("Count")
+```
+
+![plot of chunk imputing2](figure/imputing2.png) 
+
+```r
 dailysteps_mean <- mean(dailysteps)
 dailysteps_median <- median(dailysteps)
 ```
-The mean total number of steps taken per day after imputing is `r dailysteps_mean`.
-The median total number of steps taken per day after imputing is `r dailysteps_median`.
+The mean total number of steps taken per day after imputing is 1.0766 &times; 10<sup>4</sup>.
+The median total number of steps taken per day after imputing is 1.0766 &times; 10<sup>4</sup>.
 
 These values are higher than the estimates from the first part before imputing. This is because the missing data are in all the 5-min interval of 8 days and making these 8 days having a total number of steps being 0. Hence, the impact of missing values is dragging down the mean and median.
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
-``` {r week_pattern, echo=TRUE, fig.height=12, fig.width=8}
+
+```r
 activity$day <- as.factor(ifelse(weekdays(activity$date)=="Saturday" |
                                      weekdays(activity$date)=="Sunday", "weekend", "weekday"))
 avg_steps <- tapply(activity$steps, INDEX = list(activity$interval, activity$day),
@@ -110,3 +150,5 @@ ggplot(df, aes(five_min_int, avg_steps)) +
     scale_x_datetime(labels = date_format("%H:%M")) +
     ylab("Number of steps") 
 ```
+
+![plot of chunk week_pattern](figure/week_pattern.png) 
